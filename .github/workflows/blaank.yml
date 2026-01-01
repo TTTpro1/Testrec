@@ -1,37 +1,31 @@
-name: Subfinder Scan
+name: Run Subfinder
 
 on:
+  push:
+    branches: [ "main" ]
   workflow_dispatch:
-    inputs:
-      target:
-        description: 'Target domain to scan'
-        required: true
-        type: string
 
 jobs:
-  subfinder-scan:
+  subfinder:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.20'
-          
+
       - name: Install Subfinder
-        run: go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
-        
-      - name: Run Subfinder
-        id: subfinder
         run: |
-          mkdir -p results
-          subfinder -d ${{ inputs.target }} -o results/subfinder_${{ inputs.target }}.txt -silent
-          
+          sudo apt update
+          sudo apt install -y golang
+          go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Run Subfinder on target
+        run: |
+          subfinder -d example.com -silent -o subdomains.txt
+
       - name: Upload results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: subfinder-results
-          path: results/
+          path: subdomains.txt
