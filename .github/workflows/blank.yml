@@ -1,0 +1,31 @@
+name: Subfinder Automation
+
+on:
+  # Trigger automatically every 5 hours
+  schedule:
+    - cron: '0 */5 * * *'
+  
+  # Trigger manually with a custom domain input
+  workflow_dispatch:
+    inputs:
+      target_domain:
+        description: 'The domain to scan (e.g., example.com)'
+        required: true
+        default: 'example.com' # Change this to your primary target for scheduled runs
+
+jobs:
+  run-subfinder:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Run Subfinder
+        # Uses the official ProjectDiscovery Docker image
+        uses: docker://ghcr.io/projectdiscovery/subfinder:latest
+        with:
+          args: -d ${{ inputs.target_domain }} -o subdomains.txt
+
+      - name: Upload Results as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: subdomains-${{ inputs.target_domain }}
+          path: subdomains.txt
